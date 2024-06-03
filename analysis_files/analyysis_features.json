@@ -1,0 +1,47 @@
+{
+    "missing_values": {
+        "null_count": {
+            "MarkDown1": "4158",
+            "MarkDown2": "5269",
+            "MarkDown3": "4577",
+            "MarkDown4": "4726",
+            "MarkDown5": "4140",
+            "CPI": "585",
+            "Unemployment": "585"
+        },
+        "nulls_higher_than": {
+            "MarkDown1": 0.5076923076923077,
+            "MarkDown2": 0.6433455433455434,
+            "MarkDown3": 0.5588522588522589,
+            "MarkDown4": 0.577045177045177,
+            "MarkDown5": 0.5054945054945055
+        },
+        "high_missing_correlations": {
+            "CPI_Unemployment": 1.0,
+            "MarkDown1_MarkDown5": 0.9956132739401344,
+            "MarkDown3_MarkDown5": 0.8982892109009173,
+            "MarkDown1_MarkDown3": 0.8953608368072232,
+            "MarkDown1_MarkDown4": 0.8694088642115998,
+            "MarkDown4_MarkDown5": 0.8655950056902854,
+            "MarkDown3_MarkDown4": 0.8476248606036041,
+            "MarkDown2_MarkDown4": 0.7639078938961312,
+            "MarkDown1_MarkDown2": 0.7545781164926346,
+            "MarkDown2_MarkDown5": 0.7527908611836106,
+            "MarkDown2_MarkDown3": 0.7060914599196807
+        },
+        "predict_missings": {
+            "MarkDown1": 0.6629640674910865,
+            "MarkDown2": 0.6100342539070862,
+            "MarkDown3": 0.6697218532383368,
+            "MarkDown4": 0.6374880698548077,
+            "MarkDown5": 0.5954912259078579,
+            "CPI": 0.8844933609055289,
+            "Unemployment": 0.8979728994340445
+        }
+    },
+    "duplicate_values": {
+        "exact_duplicates": "None",
+        "entity_duplicates": "None",
+        "duplicate_columns": "None"
+    }
+}

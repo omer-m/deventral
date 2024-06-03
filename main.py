@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import json
 from io import BytesIO
+import traceback
 
 from fastapi import FastAPI
 from fastapi import FastAPI, UploadFile, File
@@ -31,6 +32,7 @@ dir_path="C:/Users/HP/Desktop/deventral internship/Data Profilling Libraries/YDa
 
 # Database connection
 def create_connection():
+    
     try:
         connection = mysql.connector.connect(
             host="localhost",
@@ -43,8 +45,9 @@ def create_connection():
     except Error as e:
         raise HTTPException(status_code=500, detail=f"Database connection failed: {e}")
 
-# Function to insert file metadata into the database
+# Function to insert file metadata into the database 
 def insert_file_metadata(file_name, file_size, file_path, file_mime_type):
+   
     connection = create_connection()
     cursor = connection.cursor()
     try:
@@ -52,8 +55,10 @@ def insert_file_metadata(file_name, file_size, file_path, file_mime_type):
         INSERT INTO file_details (fileName, fileSize, fileLocation, fileType)
         VALUES (%s, %s, %s, %s)
         """
+        
         cursor.execute(query, (file_name, file_size, file_path, file_mime_type))
         connection.commit()
+        print("in insert_file_metadata try")
     except Error as e:
         connection.rollback()
         raise HTTPException(status_code=500, detail=f"Failed to insert data: {e}")
@@ -62,17 +67,20 @@ def insert_file_metadata(file_name, file_size, file_path, file_mime_type):
         connection.close()
    
    # Function to fetch file metadata from the database
-def insert_file_names(missing_file,duplicate_file,ID):
+
+def insert_analysisFile(analysis_file,analysis_json,ID):
     connection = create_connection()
     cursor = connection.cursor()
     try:
         query = """
-       UPDATE file_details SET missing_checkerfile = %s, duplicate_checkerfile = %s WHERE fileID = %s;
+       UPDATE file_details SET analysis_file = %s,  analysis = %s WHERE fileID = %s;
         """
-        cursor.execute(query, (missing_file,duplicate_file,ID))
+        
+        cursor.execute(query, (analysis_file,analysis_json,ID))
         connection.commit()
     except Error as e:
         connection.rollback()
+       
         raise HTTPException(status_code=500, detail=f"Failed to insert data: {e}")
     finally:
         cursor.close()
@@ -127,45 +135,67 @@ def fetch_file_metadata_by_id(file_id):
         cursor.close()
         connection.close()
 
-
 def convert_to_serializable(obj):
-    if isinstance(obj, pd.DataFrame):
-        return obj.to_dict(orient='records')
-    elif isinstance(obj, pd.Series):
-        return obj.to_dict()
-    elif isinstance(obj, dict):
-        return {key: convert_to_serializable(value) for key, value in obj.items()}
-    elif isinstance(obj, list):
-        return [convert_to_serializable(element) for element in obj]
-    else:
-        return obj
+    try:
+        if isinstance(obj, pd.DataFrame):
+            return obj.to_dict(orient='records')
+        elif isinstance(obj, pd.Series):
+            return obj.to_dict()
+        elif isinstance(obj, dict):
+           
+            return {convert_to_serializable(key): convert_to_serializable(value) for key, value in obj.items()}
+           
+        elif isinstance(obj, list):
+            return [convert_to_serializable(element) for element in obj]
+        else:
+            # Convert non-serializable types to serializable types or handle as needed
+            return str(obj)
+    except Exception as e:
+        traceback.print_exc()
 
-def save_json(result,file_name):
-    # Convert the evaluation result to a JSON-serializable format
-    serializable_evaluation = convert_to_serializable(result)
-    # print(serializable_evaluation)
+        print("Error:", e)
+        raise
 
-    # Save the serializable dictionary to a JSON file
-    with open(file_name+'.json', 'w') as json_file:
-        json.dump(serializable_evaluation, json_file, indent=4)
+def combine_analysis(missing_values,duplicate_values):
+    
+    comnined_dict = {
+        "missing_values": missing_values,
+        "duplicate_values": duplicate_values
+    }
+   
+
+    return comnined_dict 
+
+def save_json(result, file_name):
+    try:
+        # Ensure the result is passed correctly to convert_to_serializable
+        serialized_result = convert_to_serializable(result)
+        print("Serialized Result:", type(serialized_result))
+        # Save the serializable dictionary to a JSON file
+        with open(file_name + '.json', 'w') as json_file:
+            json.dump(serialized_result, json_file, indent=4)
+    except Exception as e:
+        print("Error:", e)
+        traceback.print_exc()
+
+        raise
+
 
 
 def duplicate_checker(df,name):
     
     dc = DuplicateChecker(df=df)
     results = dc.evaluate()
-    print(type(results))
-    save_json(results,dir_path+"analysis_files/duplicate_checker_"+name[:-4])
-    return dir_path+"analysis_files/duplicate_checker_"+name[:-4]+'.json'
+
+    return results
     
 def missing_checker(df,name):
     mp = MissingsProfiler(df=df, random_state=42)
     results = mp.evaluate()
     r = list(results.items())
     r.insert(0, ('null_count', mp.null_count().to_dict())) 
-    save_json(dict(r),dir_path+"analysis_files/missing_checker_"+name[:-4])
-    return dir_path+"analysis_files/missing_checker_"+name[:-4]+'.json'
-
+   
+    return dict(r)
    
 @app.get("/")
 async def root():
@@ -193,7 +223,8 @@ def upload_file(file: UploadFile):
             "file_path": dir_path+file_path,
             "file_mime_type": file.content_type
         }
-
+       
+        print(file_metadata)
         # Insert metadata into the database
         insert_file_metadata(
             file_metadata["file_name"],
@@ -201,7 +232,7 @@ def upload_file(file: UploadFile):
             file_metadata["file_path"],
             file_metadata["file_mime_type"]
         )
-
+       
         return file_metadata 
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Invalid {file.content_type} file: {str(e)}")
@@ -212,13 +243,21 @@ async def analyse_by_id(file_id: int):
         file_path = fetch_file_metadata_by_id(file_id)
         df =pd.read_csv(file_path["fileLocation"])
         
-        duplicate_checkerfile = duplicate_checker(df,file_path["fileName"])
-        missing_checkerfile = missing_checker(df,file_path["fileName"])
+        duplicate_values = duplicate_checker(df,file_path["fileName"])
+        missing_values = missing_checker(df,file_path["fileName"])
         
-        insert_file_names ( missing_checkerfile, duplicate_checkerfile, file_id )
+        combine_analysis_json = combine_analysis (missing_values,duplicate_values)
+        file_name = dir_path+'analysis_files/analyysis_'+file_path["fileName"][:-4]
+        save_json(combine_analysis_json,file_name)
+        analysis_json_str = json.dumps(convert_to_serializable(combine_analysis_json))
         
-        return file_path, missing_checkerfile, duplicate_checkerfile
+        insert_analysisFile ( file_name, analysis_json_str, file_id )
+        
+        return file_path, file_name
     except Exception as e:
+        print(e)
+        traceback.print_exc()
+
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/get_files_data/{file_id}")
