@@ -8,6 +8,7 @@ from fastapi import FastAPI
 from fastapi import FastAPI, UploadFile, File
 
 from fastapi.exceptions import HTTPException
+
 import mysql.connector
 from mysql.connector import Error
 
@@ -102,6 +103,24 @@ def fetch_file(file_id):
         cursor.close()
         connection.close()
 
+def fetch_analysisOnly(file_id):
+    connection = create_connection()
+    cursor = connection.cursor(dictionary=True)
+    try:
+        query = "SELECT  analysis FROM file_details WHERE fileID = %s"
+        cursor.execute(query, (file_id,))
+        result = cursor.fetchall()
+        if result is None:
+            raise HTTPException(status_code=404, detail="File not found")
+        return result
+    except Error as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch data: {e}")
+    finally:
+        cursor.close()
+        connection.close()
+
+
+
 def fetch_all_file():
     connection = create_connection()
     cursor = connection.cursor(dictionary=True)
@@ -180,8 +199,6 @@ def save_json(result, file_name):
 
         raise
 
-
-
 def duplicate_checker(df,name):
     
     dc = DuplicateChecker(df=df)
@@ -201,8 +218,7 @@ def missing_checker(df,name):
 async def root():
     return {"FastAPI": "Hello World "}
 
-
-@app.post("/upload_file")
+@app.post("/files")
 def upload_file(file: UploadFile): 
     
     if file.content_type != 'text/csv':
@@ -237,7 +253,7 @@ def upload_file(file: UploadFile):
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Invalid {file.content_type} file: {str(e)}")
 
-@app.post("/analyse/{file_id}")
+@app.post("files/{file_id}/analysis")
 async def analyse_by_id(file_id: int):
     try:
         file_path = fetch_file_metadata_by_id(file_id)
@@ -260,7 +276,7 @@ async def analyse_by_id(file_id: int):
 
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/get_files_data/{file_id}")
+@app.get("/files/{file_id}")
 async def get_files(file_id: int):
     try:
         files_metadata = fetch_file(file_id)
@@ -268,8 +284,17 @@ async def get_files(file_id: int):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.get("/files/{file_id}/analysis")
+async def get_files(file_id: int):
+    try:
+        data = fetch_analysisOnly(file_id)
+        print(type(data[0]['analysis']))
+        return data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/get_all_files")
+
+@app.get("/files")
 async def get_all_files():
     try:
         files_metadata = fetch_all_file()
