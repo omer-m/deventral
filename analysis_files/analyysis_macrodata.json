@@ -1,0 +1,17 @@
+{
+    "missing_values": {
+        "null_count": {
+            "realgovt": "11"
+        },
+        "nulls_higher_than": "None",
+        "high_missing_correlations": {},
+        "predict_missings": {
+            "realgovt": 0.29824561403508776
+        }
+    },
+    "duplicate_values": {
+        "exact_duplicates": "None",
+        "entity_duplicates": "None",
+        "duplicate_columns": "None"
+    }
+}
