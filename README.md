@@ -70,7 +70,7 @@ app/
 - FastAPI
 - Pandas
 - NumPy
-- MySQL Connector
+- Mongodb Atlas
 - YData Quality Library
 
 ## Setup and Installation
