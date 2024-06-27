@@ -6,50 +6,62 @@ The main functionalities include uploading files, checking for missing values, a
 
 ## Folder Structure
 
+
 ```
-app
-    ├── analysis_files
-    ├── upload_files
-    └── main.py
+app/
+├── config/
+│   ├── __init__.py   # An empty file marking the directory as a Python package.
+│   └── database.py   # Contains configuration settings and code related to the database.
+│
+├── models/
+│   ├── __init__.py
+│   └── scheme.py     # Defines data models and schemas used in the application.
+│
+├── api_routes/
+│   ├── __init__.py
+│   └── route.py      # Contains API route definitions, specifying endpoints and operations.
+│
+├── utils/
+│   ├── __init__.py
+│   ├── analysis.py         # Houses utility functions for data analysis using ydata-quality library.
+│   └── file_operations.py  # Contains utility functions for file operations like saving and inserting records in the database.
+│
+└── main.py            # Entry point for the application.
 ```
 
-- `analysis_files`: This folder contains the analysis results in JSON format.
-- `upload_files`: This folder contains the uploaded CSV files.
-- `main.py`: The main FastAPI application file containing the endpoints and logic.
 
 ## Endpoints
-### Upload File
-- **POST /upload_file**
 
-    Upload a CSV file.
 
-    **Request Parameter:**
-    - `file`: UploadFile
+### Upload a File
 
-    **Response:**
-    - JSON object containing file metadata.
+- **Endpoint**: `/files`
+- **Method**: `POST`
+- **Description**: Uploads a CSV file to the server and stores its metadata in the database.
 
-### Analyze File by ID
-- **POST /analyse/{file_id}**
+### Analyze a File
 
-    Analyze a file for duplicates and missing values.
+- **Endpoint**: `/files/{file_id}/analysis`
+- **Method**: `POST`
+- **Description**: Analyzes a file for missing and duplicate values and stores the analysis results.
 
-    **Path Parameter:**
-    - `file_id` (int): ID of the file to be analyzed.
+### Get File data
 
-    **Response:**
-    - JSON object containing file metadata and paths to the analysis results.
+- **Endpoint**: `/files/{file_id}`
+- **Method**: `GET`
+- **Description**: Fetches metadata and Analysis for a specific file based on the provided file ID.
 
-### Get File Data by ID
-- **GET /get_files_data/{file_id}**
+### Get File Analysis
 
-    Retrieve metadata for a specific file by ID.
+- **Endpoint**: `/files/{file_id}/analysis`
+- **Method**: `GET`
+- **Description**: Fetches the analysis data for a specific file based on the provided file ID.
 
-    **Path Parameter:**
-    - `file_id` (int): ID of the file.
+### Get All Files 
 
-    **Response:**
-    - JSON object containing file metadata.
+- **Endpoint**: `/files`
+- **Method**: `GET`
+- **Description**: Fetches all data from the database for all files.
 
 
 ## Requirements
