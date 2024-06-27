@@ -1,0 +1,8 @@
+{
+    "mongodb": {
+      "user": "admin",
+      "password": "Password1",
+      "cluster": "cluster0.4uf5yal.mongodb.net"
+    }
+  }
+  
